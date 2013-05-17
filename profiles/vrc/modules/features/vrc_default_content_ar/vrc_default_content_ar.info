@@ -1,0 +1,12 @@
+name = VRC Default content - Arabic
+core = 7.x
+package = VRC
+version = 7.x-1.0
+project = vrc_default_content_ar
+dependencies[] = defaultcontent
+features[content][] = vrc_default_documentation_ff_ar
+features[content][] = vrc_default_page_about_ar
+features[content][] = vrc_default_page_become_registered_ar
+features[content][] = vrc_default_page_front_ar
+features[features_api][] = api:1
+

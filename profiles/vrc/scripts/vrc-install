@@ -1,0 +1,195 @@
+#!/bin/bash
+
+# Create VRC instance by running `drush make vrc` and `drush site-install`
+
+# Example values defined in ~/.drushrc.php set global drush site-install defaults
+# $command_specific['site-install'] = array(
+#   'account-name' => 'admin',                 // default uid1 name=admin
+#   'account-pass' => 'root',                  // default random generated pw
+#   'account-mail' => 'fen@openprivacy.org',   // defaults to admin@example.com
+#   'site-mail'    => 'fen@openprivacy.org',   // defaults to admin@example.com
+# );
+
+# Example ~/.drush/aliases.drushrc.php sets alias for (sandbox) ieu site
+# $aliases['ieu'] = array(
+#   'root' => '/home/fen/workspace/ieu',
+#   'uri' => 'http://ieu.localhost/',
+#   'databases' =>
+#   array (
+#     'default' =>
+#     array (
+#       'default' =>
+#       array (
+#         'database' => 'ieu_drupal',
+#         'username' => 'root',
+#         'password' => 'root',
+#         'host' => 'localhost',
+#         'port' => '',
+#         'driver' => 'mysql',
+#         'prefix' => '',
+#       ),
+#     ),
+#   ),
+# );
+
+vrc_usage() {
+    echo "Usage: $0 SITE [DEBUG [LOCALE]]"
+    echo "       Remove old site and create new one from install profile."
+    echo "          See code for optional configuration settings in ~/.vrcrc"
+    echo "       SITE is one of 'live', 'qa', 'dev', or 'ieu'."
+    echo "       If SITE == 'live' then backup the current database first."
+    echo "       If SITE == 'dev' or 'qa' then admin password is 'civicactions'."
+    echo "       If SITE == 'ieu' then treat as a developer sandbox."
+    echo "       If DEBUG exists and DEBUG != 0 (zero) then run in DEBUG mode."
+    echo "          With DEBUG, try: 'vrc-install ieu 1 2>&1 | tee make.out'."
+    echo "       If LOCALE exists, it must be one of ar,fa,my,ru,zh-hans,ta-lk."
+    echo "       If DOCBASE/ieu.make/ exists, copy from that rather than pulling"
+    echo "          from SVN; this is useful for testing uncommitted changes."
+    exit
+}
+
+LANGS="en ar fa my ru zh-hans ta-lk"
+SITES="dev qa live ieu"
+
+SITE=$1
+DEBUG=$2
+LANGCODE=$3
+LOCALE=''
+ALIAS=''
+
+for s in $SITES; do
+    if [ "$SITE" == "$s" ]; then
+        ALIAS="@${SITE}"
+        break
+    fi
+done
+if [ "x$ALIAS" == "x" ]; then
+    vrc_usage
+fi
+
+if [ "x$LANGCODE" != "x" ]; then
+    for l in $LANGS; do
+        if [ "$LANGCODE" == "$l" ]; then
+            LOCALE="--locale=$LANGCODE"
+            break
+        fi
+    done
+    if [ "x$LOCALE" == "x" ]; then
+        vrc_usage
+    fi
+else
+    LANGCODE='en'
+    LOCALE="--locale=en"
+fi
+
+if [ $DEBUG ] && [ $DEBUG -ne 0 ]; then
+    DEBUG='-d'
+    echo "site=$SITE, debug=$DEBUG, locale=$LOCALE"
+    set -x
+else
+    DEBUG=''
+fi
+
+if [ "$SITE" == "live" ]; then
+    echo -n "Are you sure you want to update LIVE? (y/N): "
+    read answer
+    if [ "$answer" != "y" ]; then
+        echo "Thanks for being careful!"
+        vrc_usage
+    fi
+    echo "Backup database..."
+    drush $DEBUG $ALIAS sql-dump --gzip --result-file
+fi
+
+##
+## end argument checking; begin site building
+##
+
+DOCROOT=`drush dd $ALIAS`
+DOCBASE=`dirname $DOCROOT`
+
+if [ -e "$DOCROOT" ]; then
+    echo "Remove old site..."
+    chmod -R +w "${DOCROOT}sites/default/"
+    rm -rf "$DOCROOT"
+fi
+
+if [ -e "${DOCBASE}/ieu.make" ]; then
+    echo "Copy files..."
+    cp -a ${DOCBASE}/ieu.make $DOCROOT
+else
+    echo "Pull files..."
+    svn co https://svn.civicactions.net/repos/ieu/trunk ${DOCROOT}
+fi
+
+echo "Entering DOCROOT=${DOCROOT} (LOCALE=${LOCALE})..."
+cd "$DOCROOT"
+chmod 755 .
+
+COUNT=1
+while [ $COUNT -lt 4 ]; do
+    drush $DEBUG make --contrib-destination=profiles/vrc profiles/vrc/vrc.make .
+    if [ -r index.php ]; then
+        break
+    fi
+    COUNT=$(($COUNT + 1))
+    echo "Warning: Drush make attempt number ${COUNT}:"
+done
+if [ ! -r index.php ]; then
+    echo "Fatal: Tried three times to run `drush make` but failed.  Network issues?"
+    exit
+fi
+
+if [ "$SITE" == "ieu" ]; then
+    echo "Fix .htaccess..."
+    sed -i -e 's|# RewriteBase /$|RewriteBase /|' .htaccess
+else
+    echo "Fix perms..."
+    fixwebperms.sh .
+fi
+
+echo "Site install..."
+drush $DEBUG -y $ALIAS site-install vrc --site-name="$SITE" \
+$LOCALE vrc_create_qa_role_accounts_form.add_account=1
+
+# It would be better to fix AT to chmod it's files properly
+# (D7 actually has a function/setting specifically for this that Owen helped get in)
+if [ "$SITE" != "ieu" ]; then
+    echo "Fix perms (again!) for AT-installed files..."
+    fixwebperms.sh .
+fi
+
+# HACK: Feeds don't import under `drush site-install`
+# HACK: If drush_feeds_import is installed, use it to install feeds here
+drush help feeds-import >& /dev/null
+if [ $? != 0 ]; then
+    echo "Feeds don't import properly when run via the 'drush site-install script."
+    echo "The drush command 'feeds-import' can do this, but it is not installed."
+    echo "To install the 'feeds-import' command, do:"
+    echo "  mkdir ~/.drush"
+    echo "  cp profiles/vrc/scripts/feeds.drush.inc ~/.drush"
+    echo "Import specifics follow:"
+    DRUSH_FEED=0
+else
+    DRUSH_FEED=1
+fi
+HTTP_BASE='http://fen.net/sites/fen.net/files/vrc'
+for FEED in taxonomy_compatibility taxonomy_tools_categories taxonomy_tools; do
+    IMPORTER=${FEED}_${LANGCODE}
+    HTTP=${HTTP_BASE}/${FEED}.csv
+    if [ $DRUSH_FEED ]; then
+        echo ">> drush $ALIAS feeds-import --http=$HTTP $IMPORTER"
+        drush $DEBUG -y $ALIAS feeds-import --http=$HTTP $IMPORTER
+    else
+        echo "  Importer='${IMPORTER}'; URL=$HTTP"
+    fi
+done
+FEED='content_documentation'
+HTTP=${HTTP_BASE}/${FEED}_${LANGCODE}.csv
+if [ $DRUSH_FEED ]; then
+    echo ">> drush $ALIAS feeds-import --http=$HTTP $FEED"
+    drush $DEBUG -y $ALIAS feeds-import --http=$HTTP $FEED
+else
+    echo "  Importer='${FEED}'; URL=$HTTP"
+fi
+echo "Done!"

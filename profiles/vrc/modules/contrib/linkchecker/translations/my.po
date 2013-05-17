@@ -1,0 +1,28 @@
+# Burmese translation of Link checker (7.x-1.0-beta1)
+# Copyright (c) 2012 by the Burmese translation team
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Link checker (7.x-1.0-beta1)\n"
+"POT-Creation-Date: 2012-02-29 16:32+0000\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Language-Team: Burmese\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+msgid "Save configuration"
+msgstr "အစိတ်အပိုင်းများဖွဲ့စည်းပုံအားသိမ်းဆည်းခြင်း"
+msgid "Operations"
+msgstr "လုပ်ဆောင်ချက်များ"
+msgid "Disabled"
+msgstr "ပိတ်ထားသည်"
+msgid "General settings"
+msgstr "အထွေထွေ အထိန်းအချုပ်များ"
+msgid "Preview"
+msgstr "အစမ်းကြည့်ရန်"
+msgid "URL"
+msgstr "လိပ်စာ URL"
+msgid "Error"
+msgstr "အမှား"

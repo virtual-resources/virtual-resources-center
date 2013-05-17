@@ -1,0 +1,14 @@
+name = Taxonomy Notifications
+description = Allows users to subscribe to taxonomy terms.
+package = "Notifications"
+dependencies[] = notifications_content
+dependencies[] = taxonomy
+core = 7.x
+files[] = notifications_tags.inc
+
+
+; Information added by drush on 2013-01-28
+version = "4f7914d"
+project = "notifications"
+datestamp = "1359351060"
+

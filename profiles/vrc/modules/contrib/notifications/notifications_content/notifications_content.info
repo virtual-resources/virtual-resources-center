@@ -1,0 +1,13 @@
+name = Content Notifications
+description = Allows users to subscribe to content related events.
+package = "Notifications"
+dependencies[] = notifications
+core = 7.x
+files[] = notifications_content.inc
+
+
+; Information added by drush on 2013-01-28
+version = "4f7914d"
+project = "notifications"
+datestamp = "1359351060"
+

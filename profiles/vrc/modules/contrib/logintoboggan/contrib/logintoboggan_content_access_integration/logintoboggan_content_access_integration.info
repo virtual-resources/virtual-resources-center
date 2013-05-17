@@ -1,0 +1,14 @@
+
+name = "LoginToboggan Content Access Integration"
+description = "Integrates LoginToboggan with Content Access module, so that Non-validated users are handled correctly"
+core = "7.x"
+
+dependencies[] = logintoboggan
+dependencies[] = content_access
+
+
+; Information added by drush on 2013-01-08
+version = "df2d73c"
+project = "logintoboggan"
+datestamp = "1357618373"
+

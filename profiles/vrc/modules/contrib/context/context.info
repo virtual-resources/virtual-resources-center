@@ -1,0 +1,17 @@
+name = "Context"
+dependencies[] = "ctools"
+description = "Provide modules with a cache that lasts for a single page request."
+package = "Context"
+core = "7.x"
+
+files[] = context.module
+files[] = tests/context.test
+files[] = tests/context.conditions.test
+files[] = tests/context.reactions.test
+
+
+; Information added by drush on 2013-01-08
+version = "9539d09"
+project = "context"
+datestamp = "1357618437"
+

@@ -1,0 +1,14 @@
+name = Devel node access
+description = Developer blocks and page illustrating relevant node_access records.
+package = Development
+dependencies[] = menu
+core = 7.x
+configure = admin/config/development/devel
+tags[] = developer
+
+
+; Information added by drush on 2013-01-08
+version = "94881c9"
+project = "devel"
+datestamp = "1357618416"
+

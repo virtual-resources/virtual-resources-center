@@ -1,0 +1,14 @@
+name = User account tabs
+description = Display user account tabs to manage own subscriptions
+package = Notifications
+version = VERSION
+core = 7.x
+dependencies[] = notifications
+configure = admin/config/messaging
+
+
+; Information added by drush on 2013-01-28
+version = "4f7914d"
+project = "notifications"
+datestamp = "1359351060"
+

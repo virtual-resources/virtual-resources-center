@@ -1,0 +1,15 @@
+name = Devel generate
+description = Generate dummy users, nodes, and taxonomy terms.
+package = Development
+core = 7.x
+dependencies[] = devel
+tags[] = developer
+configure = admin/config/development/generate
+files[] = devel_generate.test
+
+
+; Information added by drush on 2013-01-08
+version = "94881c9"
+project = "devel"
+datestamp = "1357618416"
+

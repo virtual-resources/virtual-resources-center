@@ -1,0 +1,12 @@
+name = VRC Default content - Farsi
+core = 7.x
+package = VRC
+version = 7.x-1.0
+project = vrc_default_content_fa
+dependencies[] = defaultcontent
+features[content][] = vrc_default_documentation_ff_fa
+features[content][] = vrc_default_page_about_fa
+features[content][] = vrc_default_page_become_registered_fa
+features[content][] = vrc_default_page_front_fa
+features[content][] = vrc_default_all_questions_fa
+features[features_api][] = api:1

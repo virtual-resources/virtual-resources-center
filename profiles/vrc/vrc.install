@@ -1,0 +1,252 @@
+<?php
+
+define ('VRC_FEEDS_IMPORT_BASE_URL', 'http://www.absolutelatitude.com/');
+
+/**
+ * Implements hook_install().
+ *
+ * Perform actions to set up the site for this profile.
+ * These actions were copied from standard_install()
+ * and may not (all) be required for vrc_install().
+ *
+ * @see system_install()
+ */
+function vrc_install() {
+  theme_enable(array('horizon', 'seven'));
+  variable_set('theme_default', 'horizon');
+  variable_set('admin_theme', 'seven');
+  variable_set('node_admin_theme', 1);
+
+  // Allow visitor account creation without administrative approval.
+  variable_set('user_register', USER_REGISTER_VISITORS);
+
+  // for vrc_set_locale_content()
+  // @see http://drupal.org/node/1231302#comment-5735768
+  variable_set('node_content_enabled', TRUE);
+
+  // Don't display userpoints messages during install.
+  // This is reset in vrc_cleanup_install() for normal operations.
+  variable_set('userpoints_display_message', 0);
+}
+
+/**
+ * Create Default users
+ * @see http://data.agaric.com/providing-default-user-installation-profile-drupal-7
+ */
+function vrc_create_default_users() {
+  // $roles = user_roles(TRUE);
+  $roles = user_roles();
+  // drupal_set_message("<pre>roles=". print_r($roles, true) ."</pre>"); DEBUG
+  if (!in_array(st('editor'), $roles)) {
+    drupal_set_message('vrc_create_default_users: editor role not found', 'error');
+    return;
+  }
+  $rids = array_flip($roles);
+
+  $newuser = array();
+  $newuser['name']   = 'editor';
+  $newuser['mail']   = 'editor@my-vrc.org';
+  $newuser['roles']  = array($rids['editor'] => $rids['editor']);
+  $newuser['pass']   = 'editor.changeme';
+  $newuser['status'] = 1;
+  $account = user_save(drupal_anonymous_user(), $newuser);
+
+  drupal_set_message('vrc_create_default_users: Created editor account', 'status');
+
+  if (!in_array(st('support'), $roles)) {
+    drupal_set_message('vrc_create_default_users: support role not found', 'error');
+    return;
+  }
+  $rids = array_flip($roles);
+
+  $newuser = array();
+  $newuser['name']   = 'support';
+  $newuser['mail']   = 'support@my-vrc.org';
+  $newuser['roles']  = array($rids['support'] => $rids['support']);
+  $newuser['pass']   = 'support.changeme';
+  $newuser['status'] = 1;
+  $account = user_save(drupal_anonymous_user(), $newuser);
+
+  drupal_set_message('vrc_create_default_users: Created support account', 'status');
+}
+
+/**
+ * Create QA RoleAccounts
+ * @see https://trac.civicactions.net/ieu/wiki/RoleAccounts
+ * @see http://data.agaric.com/providing-default-user-installation-profile-drupal-7
+ */
+function vrc_create_qa_role_accounts() {
+  $roles = user_roles(TRUE);
+  if (! (in_array('authenticated user', $roles)
+      && in_array('no email',           $roles)
+      && in_array('editor',             $roles)
+      && in_array('support',             $roles)
+      && in_array('administrator',      $roles))) {
+    variable_set('vrc_create_qa_role_accounts', $roles);
+    drupal_set_message('vrc_create_qa_role_accounts: roles not found', 'error');
+    return;
+  }
+  $rids = array_flip($roles);
+
+  $role = array();
+  $role['name']   = 'qa-auth';
+  $role['mail']   = 'qa-1@civicactions.com';
+  $role['roles']  = array($rids['authenticated user'] => $rids['authenticated user']);
+  $role['pass']   = 'auth.vrcqa';
+  $role['status'] = 1;
+  $account = user_save(drupal_anonymous_user(), $role);
+
+  $role['name']   = 'qa-email';
+  $role['mail']   = 'qa-2@civicactions.com';
+  $role['roles']  = array($rids['no email'] => $rids['no email']);
+  $role['pass']   = 'email.vrcqa';
+  $account = user_save(drupal_anonymous_user(), $role);
+
+  $role['name']   = 'qa-admin';
+  $role['mail']   = 'qa-3@civicactions.com';
+  $role['roles']  = array($rids['administrator'] => $rids['administrator']);
+  $role['pass']   = 'admin.vrcqa';
+  $account = user_save(drupal_anonymous_user(), $role);
+
+  $role['name']   = 'qa-editor';
+  $role['mail']   = 'qa-4@civicactions.com';
+  $role['roles']  = array($rids['editor'] => $rids['editor']);
+  $role['pass']   = 'editor.vrcqa';
+  $account = user_save(drupal_anonymous_user(), $role);
+
+  drupal_set_message('vrc_create_qa_role_accounts: Created QA Role Accounts', 'status');
+}
+
+function vrc_create_qa_role_accounts_form() {
+  $form = array();
+  $form['add_account'] = array (
+    '#type'             => 'radios',
+    '#title'            => st('Add QA Role Accounts?'),
+    '#options'          => array(0 => t('No'), 1 => t('Yes')),
+    '#default_value'    => 0,
+    '#description'      => st('Only add QA accounts on test installations.'),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => st('Continue'),
+  );
+  return $form;
+}
+
+function vrc_create_qa_role_accounts_form_submit($form, &$form_state) {
+  $values = $form_state['values'];
+
+  if ($values['add_account'] == 1) {
+    vrc_create_qa_role_accounts();
+  }
+}
+
+/**
+ * Save the theme settings
+ */
+function vrc_set_theme_settings() {
+  module_load_include('inc', 'system', 'system.admin');
+  $form_state = array();
+  $form_state['values'] = array('var' => 'theme_horizon_settings');
+  $form_state['build_info']['args'][] = 'horizon';
+  drupal_form_submit('system_theme_settings', $form_state);
+}
+
+function vrc_set_locale_content() {
+  $langcode = language_default('language');
+/*  if ($langcode != 'ar') {
+    $langcode = 'en';
+  }*/
+  $module = 'vrc_default_content_'. $langcode;
+  $filename = drupal_get_filename('module', $module);
+  if ($filename) {
+    // @see https://trac.civicactions.net/ieu/ticket/111#comment:5
+    $error_reporting = ini_get('error_reporting');
+    ini_set('error_reporting', E_ALL & ~E_NOTICE);
+    module_enable(array($module));
+    ini_set('error_reporting', $error_reporting);
+    drupal_set_message('vrc_set_locale_content: vrc_default_content_'. $langcode .' enabled.');
+  }
+  else {
+    drupal_set_message('vrc_set_locale_content: vrc_default_content_'. $langcode .' not found', 'warning');
+  }
+}
+
+function vrc_import_tool_compatibilities() {
+  $langcode = language_default('language');
+  $feed = 'taxonomy_compatibility_'. $langcode;
+  $file = 'taxonomy_compatibility.csv';
+  return vrc_import_from_feed($feed, $file);
+}
+
+function vrc_import_tool_categories() {
+  $langcode = language_default('language');
+  $feed = 'taxonomy_tools_categories_'. $langcode;
+  $file = 'taxonomy_tools_categories.csv';
+  return vrc_import_from_feed($feed, $file);
+}
+
+function vrc_import_tool_themes() {
+  $langcode = language_default('language');
+  $feed = 'taxonomy_themes_'. $langcode;
+  $file = 'taxonomy_themes.csv';
+  return vrc_import_from_feed($feed, $file);
+}
+
+function vrc_import_tools() {
+  $langcode = language_default('language');
+  $feed = 'taxonomy_tools_'. $langcode;
+  $file = 'taxonomy_tools.csv';
+  return vrc_import_from_feed($feed, $file);
+}
+
+function vrc_import_documentation() {
+  $langcode = language_default('language');
+  $feed = 'content_documentation';
+  $file = 'content_documentation_'. $langcode .'.csv';
+  return vrc_import_from_feed($feed, $file);
+}
+
+/**
+ * Import taxonomies and content from feeds
+ * @see http://drupal.org/node/1151914#comment-5906128
+ */
+function vrc_import_from_feed($feed, $file, $base=VRC_FEEDS_IMPORT_BASE_URL) {
+  drupal_set_message("vrc_import_from_feed: $feed");
+
+  $feedSource = feeds_source($feed);
+  $config = $feedSource->getConfig();
+  // Addded by kurt<kurt@wiredcraft.com>.
+  // Due to the GFW and the broken vpn access lately, we can't import the remote
+  // CSV files properly. And the installation time increase dramatically due to
+  // the timeout. So, I put the some CSV files on the github, so it can be
+  // accessed without VPN.
+  switch ($feed) {
+    case 'content_documentation':
+      $file_url = 'https://gist.github.com/raw/8860688f5a4dcc95ba06/10b752bcaeae9d27a6b8235d4abcec7993447df3/content_documentation_en.csv';
+      break;
+    case 'taxonomy_tools_categories_en':
+      $file_url = 'https://gist.github.com/raw/8860688f5a4dcc95ba06/4a901e20e5e830e5d30618f0f86e7a8b92b6720a/taxonomy_tools_categories.csv';
+      break;
+    default:
+      $file_url = $base . $file;
+      break;
+  }
+  $config['FeedsHTTPFetcher']['source'] = $file_url;
+
+  $feedSource->setConfig($config);
+  $feedSource->save();
+
+  $batch = array(
+    'title' => t("Importing feed: $feed"),
+    'operations' => array(
+      array('feeds_batch', array('import', $feed, 0))),
+    'progress_message' => t('Total: @total | Percentage: @percentage | Estimate:
+          @estimate | Elapsed: @elapsed'),
+  );
+  return $batch;
+}
+
+function vrc_cleanup_install() {
+  variable_set('userpoints_display_message', 1);
+}

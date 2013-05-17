@@ -1,0 +1,14 @@
+name = Notifications UI
+description = Provides a generic UI to create and manage subscriptions
+package = Notifications
+version = VERSION
+core = 7.x
+dependencies[] = notifications
+files[] = notifications_ui.pages.inc
+
+
+; Information added by drush on 2013-01-28
+version = "4f7914d"
+project = "notifications"
+datestamp = "1359351060"
+

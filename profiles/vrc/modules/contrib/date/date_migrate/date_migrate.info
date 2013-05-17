@@ -1,0 +1,16 @@
+name = Date Migration
+description = Provides support for importing into date fields with the Migrate module.
+core = 7.x
+package = Date/Time
+
+dependencies[] = migrate
+dependencies[] = date
+files[] = date.migrate.inc
+files[] = date_migrate.test
+
+
+; Information added by drush on 2013-01-28
+version = "6f396c2"
+project = "date"
+datestamp = "1359361824"
+

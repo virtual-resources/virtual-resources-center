@@ -1,0 +1,26 @@
+# Burmese translation of User points Nodes and Comments (7.x-1.0)
+# Copyright (c) 2011 by the Burmese translation team
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: User points Nodes and Comments (7.x-1.0)\n"
+"POT-Creation-Date: 2011-11-13 09:22+0000\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Language-Team: Burmese\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+msgid "Content"
+msgstr "အကြောင်းအရာ"
+msgid "Enabled"
+msgstr "Enabled"
+msgid "Comments"
+msgstr "မှတ်ချက်များ"
+msgid "Enabled by default"
+msgstr "နဂိုကတည်းကခွင့်ပြုထားသည်"
+msgid "Track page visits"
+msgstr ""
+"သွားခဲ့သည့် "
+"စာမျက်နှာများ"

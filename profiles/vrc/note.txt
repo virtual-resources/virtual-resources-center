@@ -1,0 +1,11 @@
+- Reinstall the site
+
+drush si vrc --account-pass=admin --db-url=mysql://root:root@127.0.0.1/vrc_local --locale=en --site-name='Virtual Resource Center' -y
+
+- Refresh the modules
+
+drush make --no-core --projects=search_api_solr --contrib-destination=profiles/vrc profiles/vrc/vrc.make .
+
+
+drush make --no-core --contrib-destination=profiles/vrc profiles/vrc/vrc.make --no-gitinfofile .
+drush make --no-core --projects=facetapi --contrib-destination=profiles/vrc profiles/vrc/vrc.make .
